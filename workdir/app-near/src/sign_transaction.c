@@ -91,6 +91,13 @@ UX_FLOW(
     &sign_flow_approve_step,
     &sign_flow_reject_step);
 
+UX_FLOW(
+    ux_display_sign_nep_413,
+    &sign_flow_intro_step,
+    &sign_flow_receiver_step,
+    &sign_flow_approve_step,
+    &sign_flow_reject_step);
+
 void print_ui_context()
 {
     for (int i = 0; i < 6; i++)
@@ -125,6 +132,13 @@ void sign_add_function_call_key_ux_flow_init()
     PRINTF("sign_add_function_call_key_ux_flow_init\n");
     print_ui_context();
     ux_flow_init(0, ux_display_sign_add_function_call_key_flow, NULL);
+}
+
+void sign_ux_flow_nep_413_init()
+{
+    PRINTF("sign_ux_flow_nep_413_init\n");
+    print_ui_context();
+    ux_flow_init(0, ux_display_sign_nep_413, NULL);
 }
 
 #endif
@@ -195,6 +209,8 @@ static void choice_callback(bool confirm)
 #define ALLOWANCE_VALUE ui_context.line5
 #define SIGN_ITEM "Sign transaction to\n"
 #define SIGN_VALUE INTRO_VALUE
+#define MESSAGE_ITEM "Review message\n"
+#define MESSAGE_VALUE INTRO_VALUE
 #define MAX_DISPLAYED_STRING_LENGTH 100
 
 static char review_displayed_string[MAX_DISPLAYED_STRING_LENGTH] = {0};
@@ -248,6 +264,23 @@ static void generic_intro_flow(nbgl_callback_t continue_callback)
         review_displayed_string,
         NULL,
         "Reject transaction",
+        continue_callback,
+        reject_confirmation);
+}
+
+static void nep_413_intro_flow(nbgl_callback_t continue_callback)
+{
+    memcpy(review_displayed_string, MESSAGE_ITEM, sizeof(MESSAGE_ITEM));
+    strlcat(review_displayed_string, MESSAGE_VALUE, MAX_DISPLAYED_STRING_LENGTH);
+
+    generic_init_list();
+    generic_init_hold_to_approve();
+
+    nbgl_useCaseReviewStart(
+        &C_stax_app_near_64px,
+        review_displayed_string,
+        NULL,
+        "Reject",
         continue_callback,
         reject_confirmation);
 }
@@ -331,6 +364,24 @@ void sign_add_function_call_key_ux_flow_init()
     generic_intro_flow(display_call_key_flow);
 }
 
+// ------------------ NEP 413 -------------------
+static void display_nep_413_flow(void)
+{
+    // Fill fields
+    START_ADD_FIELD()
+    ADD_FIELD(MESSAGE)
+    ADD_FIELD(RECEIVER)
+    END_ADD_FIELD()
+
+    // Start review
+    START_REVIEW()
+}
+
+void sign_ux_flow_nep_413_init()
+{
+    nep_413_intro_flow(display_nep_413_flow);
+}
+
 #endif
 
 static void add_chunk_data(const uint8_t *input_data, size_t input_length)
@@ -400,6 +451,9 @@ void handle_sign_transaction(uint8_t p1, uint8_t p2, const uint8_t *input_buffer
             break;
         case SIGN_FLOW_ADD_FULL_ACCESS_KEY:
             sign_add_function_call_key_ux_flow_init();
+            break;
+        case SIGN_FLOW_NEP_413:
+            sign_ux_flow_nep_413_init();
             break;
         case SIGN_PARSING_ERROR:
             THROW(SW_BUFFER_OVERFLOW);

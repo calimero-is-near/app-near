@@ -8,6 +8,9 @@
 #include "context.h"
 #include "os_shim.h"
 
+// 2**31 + 413
+#define NEP_413_INSTRUCTION 2147484061
+
 /*
  Adapted from https://en.wikipedia.org/wiki/Double_dabble#C_implementation
  Returns: length of resulting string or -1 for error
@@ -140,6 +143,14 @@ static int borsh_read_uint8(unsigned int *processed, uint8_t *n) {
     return 0;
 }
 
+static int borsh_peek_uint32(unsigned int processed, uint32_t *n) {
+    if (check_overflow(processed, 4)) {
+        return SIGN_PARSING_ERROR;
+    }
+    *n = *((uint32_t *) &tmp_ctx.signing_context.buffer[processed]);
+    return 0;
+}
+
 static int borsh_read_uint32(unsigned int *processed, uint32_t *n) {
     if (check_overflow(*processed, 4)) {
         return SIGN_PARSING_ERROR;
@@ -224,11 +235,39 @@ typedef enum {
     at_last_value = at_delete_account
 } action_type_t;
 
+int parse_nep_413() {
+    unsigned int processed = 0;
+    // NEP 413 instruction
+    BORSH_SKIP(4);
+
+    // message
+    BORSH_DISPLAY_STRING(message, ui_context.line1);
+
+    // nonce
+    BORSH_SKIP(32);
+
+    // recipient
+    BORSH_DISPLAY_STRING(recipient, ui_context.line2);
+
+    // TODO optional callback url
+    // borsh of optional starts with 1 bit, which would require shifting rest of message
+
+    return SIGN_FLOW_NEP_413;
+}
+
 // Parse the transaction details for the user to approve
 int parse_transaction() {
     memset(&ui_context, 0, sizeof(uiContext_t));
 
     // TODO: Validate data when parsing tx
+
+    uint32_t instruction;
+    if (borsh_peek_uint32(0, &instruction)) {
+        return SIGN_PARSING_ERROR;
+    }
+    if (instruction == NEP_413_INSTRUCTION) {
+        return parse_nep_413();
+    }
 
     unsigned int processed = 0;
 
