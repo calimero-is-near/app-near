@@ -1,5 +1,5 @@
-#include "sign_transaction.h"
-#include "parse_transaction.h"
+#include "sign_signature_request.h"
+#include "parse_signature_request.h"
 #include "os.h"
 #include "ux.h"
 #include "utils.h"
@@ -134,9 +134,9 @@ void sign_add_function_call_key_ux_flow_init()
     ux_flow_init(0, ux_display_sign_add_function_call_key_flow, NULL);
 }
 
-void sign_ux_flow_nep_413_init()
+void sign_message_nep_413_ux_flow_init()
 {
-    PRINTF("sign_ux_flow_nep_413_init\n");
+    PRINTF("sign_message_nep_413_ux_flow_init\n");
     print_ui_context();
     ux_flow_init(0, ux_display_sign_nep_413, NULL);
 }
@@ -377,7 +377,7 @@ static void display_nep_413_flow(void)
     START_REVIEW()
 }
 
-void sign_ux_flow_nep_413_init()
+void sign_message_nep_413_ux_flow_init()
 {
     nep_413_intro_flow(display_nep_413_flow);
 }
@@ -419,7 +419,7 @@ static void add_chunk_data(const uint8_t *input_data, size_t input_length)
     tmp_ctx.signing_context.buffer_used += input_length;
 }
 
-void handle_sign_transaction(uint8_t p1, uint8_t p2, const uint8_t *input_buffer, uint16_t input_length, volatile unsigned int *flags, volatile unsigned int *tx)
+void handle_signature_request(uint8_t p1, uint8_t p2, const uint8_t *input_buffer, uint16_t input_length, volatile unsigned int *flags, volatile unsigned int *tx)
 {
     UNUSED(p2);
     UNUSED(tx);
@@ -435,7 +435,7 @@ void handle_sign_transaction(uint8_t p1, uint8_t p2, const uint8_t *input_buffer
         tmp_ctx.signing_context.network_byte = p2;
         add_chunk_data(input_buffer, input_length);
 
-        switch (parse_transaction())
+        switch (parse_signature_request())
         {
         case SIGN_FLOW_GENERIC:
             sign_ux_flow_init();
@@ -453,7 +453,7 @@ void handle_sign_transaction(uint8_t p1, uint8_t p2, const uint8_t *input_buffer
             sign_add_function_call_key_ux_flow_init();
             break;
         case SIGN_FLOW_NEP_413:
-            sign_ux_flow_nep_413_init();
+            sign_message_nep_413_ux_flow_init();
             break;
         case SIGN_PARSING_ERROR:
             THROW(SW_BUFFER_OVERFLOW);

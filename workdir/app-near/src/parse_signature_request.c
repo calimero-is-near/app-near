@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "parse_transaction.h"
+#include "parse_signature_request.h"
 
 #include "context.h"
 #include "os_shim.h"
@@ -235,7 +235,7 @@ typedef enum {
     at_last_value = at_delete_account
 } action_type_t;
 
-int parse_nep_413() {
+int parse_message_nep_413() {
     unsigned int processed = 0;
     // NEP 413 instruction
     BORSH_SKIP(4);
@@ -257,17 +257,7 @@ int parse_nep_413() {
 
 // Parse the transaction details for the user to approve
 int parse_transaction() {
-    memset(&ui_context, 0, sizeof(uiContext_t));
-
     // TODO: Validate data when parsing tx
-
-    uint32_t instruction;
-    if (borsh_peek_uint32(0, &instruction)) {
-        return SIGN_PARSING_ERROR;
-    }
-    if (instruction == NEP_413_INSTRUCTION) {
-        return parse_nep_413();
-    }
 
     unsigned int processed = 0;
 
@@ -438,4 +428,18 @@ int parse_transaction() {
     PRINT_REMAINING_BUFFER();
 
     return SIGN_FLOW_GENERIC;
+}
+
+int parse_signature_request() {
+    memset(&ui_context, 0, sizeof(uiContext_t));
+
+    uint32_t instruction;
+    if (borsh_peek_uint32(0, &instruction)) {
+        return SIGN_PARSING_ERROR;
+    }
+    if (instruction == NEP_413_INSTRUCTION) {
+        return parse_message_nep_413();
+    } else {
+        return parse_transaction();
+    }
 }
