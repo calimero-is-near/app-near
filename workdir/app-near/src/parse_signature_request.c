@@ -249,8 +249,21 @@ int parse_message_nep_413() {
     // recipient
     BORSH_DISPLAY_STRING(recipient, ui_context.line2);
 
-    // TODO optional callback url
-    // borsh of optional starts with 1 bit, which would require shifting rest of message
+    // optional callback url
+    uint8_t option;
+    if (borsh_read_uint8(&processed, &option)) {
+        return SIGN_PARSING_ERROR;
+    }
+    if (option == 0) {
+        // All good, no callback url
+        const char *no_callback = "Not Provided";
+        strcpy_ellipsis(sizeof(ui_context.line3), ui_context.line3, strlen(no_callback), (char *) no_callback);
+        PRINTF("%s: %s\n", "no_callback", ui_context.line3);
+    } else if (option == 1) {
+        BORSH_DISPLAY_STRING(callback_url, ui_context.line3);
+    } else {
+        return SIGN_PARSING_ERROR;
+    }
 
     return SIGN_FLOW_NEP_413;
 }

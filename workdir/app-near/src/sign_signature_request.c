@@ -27,6 +27,7 @@ INFO_STEP(sign_flow_args_step, "Args", ui_context.long_line);
 INFO_STEP(sign_flow_to_account_step, "To Account", ui_context.line3);
 INFO_STEP(sign_flow_contract_step, "Contract", ui_context.line2);
 INFO_STEP(sign_flow_allowance_step, "Allowance", ui_context.line5);
+INFO_STEP(sign_flow_callback_url_step, "Callback URL", ui_context.line3);
 INFO_STEP(sign_flow_danger_step, "DANGER", "This gives full access to a device other than Ledger");
 
 UX_STEP_VALID(
@@ -95,6 +96,7 @@ UX_FLOW(
     ux_display_sign_nep_413,
     &sign_flow_intro_step,
     &sign_flow_receiver_step,
+    &sign_flow_callback_url_step,
     &sign_flow_approve_step,
     &sign_flow_reject_step);
 
